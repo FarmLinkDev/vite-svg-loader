@@ -1,6 +1,7 @@
 const fs = require('fs').promises
-const { compileTemplate } = require('@vue/compiler-sfc')
 const { optimize: optimizeSvg } = require('svgo')
+const { compileTemplate, parse } = require('@vue/component-compiler-utils')
+const compiler = require('vue-template-compiler')
 
 module.exports = function svgLoader (options = {}) {
   const { svgoConfig, svgo, defaultImport } = options
@@ -44,11 +45,16 @@ module.exports = function svgLoader (options = {}) {
         }).data
       }
 
+      const template = parse({
+        source: `<template>${svg}</template>`,
+        compiler: compiler,
+        filename: path
+      }).template
+
       const { code } = compileTemplate({
-        id: JSON.stringify(id),
-        source: svg,
-        filename: path,
-        transformAssetUrls: false
+        compiler: compiler,
+        source: template?.content ?? '<svg></svg>',
+        filename: path
       })
 
       return `${code}\nexport default { render: render }`
